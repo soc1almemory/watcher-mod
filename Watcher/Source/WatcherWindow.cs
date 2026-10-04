@@ -66,7 +66,7 @@ namespace Watcher
 
             Rect events = new Rect(inRect.x, graph.yMax + 6f, inRect.width, inRect.yMax - graph.yMax - 12f);
             Widgets.DrawMenuSection(events);
-            Widgets.Label(new Rect(events.x + 8, events.y + 3, events.width - 100, 24), "SLOW TICK  ·  stage timing + Harmony patch context (not attribution)");
+            Widgets.Label(new Rect(events.x + 8, events.y + 3, events.width - 100, 24), "SLOW TICK MONITORING");
             if (Widgets.ButtonText(new Rect(events.xMax - 72, events.y + 2, 64, 22), "Clear")) PerformanceData.ClearEvents();
             Rect list = new Rect(events.x + 6, events.y + 28, events.width - 12, events.height - 32);
             float contentHeight = PerformanceData.Events.Count * 23f;
