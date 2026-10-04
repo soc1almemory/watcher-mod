@@ -38,7 +38,7 @@ namespace Watcher
         {
             Rect header = new Rect(inRect.x, inRect.y, inRect.width, 25f);
             Text.Font = GameFont.Small;
-            Widgets.Label(header, "WATCHER  <color=#999999>PERFORMANCE</color>");
+            Widgets.Label(header, "WATCHER");
 
             Rect metrics = new Rect(inRect.x, inRect.y + 29f, inRect.width, 96f);
             Widgets.DrawMenuSection(metrics);
