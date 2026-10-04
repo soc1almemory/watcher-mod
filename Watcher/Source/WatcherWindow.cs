@@ -57,11 +57,12 @@ namespace Watcher
             Rect graph = new Rect(inRect.x, metrics.yMax + 6f, inRect.width, 151f);
             Widgets.DrawMenuSection(graph);
             Widgets.Label(new Rect(graph.x + 8, graph.y + 3, 145, 22), "HISTORY  ·  " + WatcherMod.Settings.historySeconds + " s");
-            Rect toggles = new Rect(graph.x + 168, graph.y + 2, graph.width - 176, 20);
-            Widgets.CheckboxLabeled(new Rect(toggles.x, toggles.y, 53, 24), "FPS", ref showFps);
-            Widgets.CheckboxLabeled(new Rect(toggles.x + 54, toggles.y, 53, 24), "TPS", ref showTps);
-            Widgets.CheckboxLabeled(new Rect(toggles.x + 108, toggles.y, 58, 24), "Tick", ref showTick);
-            Widgets.CheckboxLabeled(new Rect(toggles.x + 166, toggles.y, 62, 24), "Frame", ref showFrame);
+            float legendX = graph.x + 160f;
+            float legendY = graph.y + 2f;
+            showFps = DrawLegend(new Rect(legendX, legendY, 58f, 24f), "FPS", new Color(.35f, .85f, .55f), showFps);
+            showTps = DrawLegend(new Rect(legendX + 61f, legendY, 58f, 24f), "TPS", new Color(.8f, .5f, .95f), showTps);
+            showTick = DrawLegend(new Rect(legendX + 122f, legendY, 62f, 24f), "Tick", new Color(1f, .65f, .25f), showTick);
+            showFrame = DrawLegend(new Rect(legendX + 187f, legendY, 74f, 24f), "Frame", new Color(.35f, .7f, 1f), showFrame);
             DrawGraph(new Rect(graph.x + 8, graph.y + 29, graph.width - 16, graph.height - 36));
 
             Rect events = new Rect(inRect.x, graph.yMax + 6f, inRect.width, inRect.yMax - graph.yMax - 12f);
@@ -103,6 +104,18 @@ namespace Watcher
             Text.Font = GameFont.Small;
             Widgets.Label(new Rect(rect.x, rect.y + 19, rect.width, rect.height - 19), value);
             Text.Font = GameFont.Small;
+        }
+
+        private static bool DrawLegend(Rect rect, string label, Color seriesColor, bool enabled)
+        {
+            if (Widgets.ButtonInvisible(rect)) enabled = !enabled;
+            Color tint = enabled ? seriesColor : new Color(.42f, .44f, .46f);
+            Widgets.DrawBoxSolid(new Rect(rect.x + 1f, rect.y + 10f, 13f, 3f), tint);
+            GUI.color = tint;
+            Text.Font = GameFont.Small;
+            Widgets.Label(new Rect(rect.x + 18f, rect.y, rect.width - 18f, rect.height), label);
+            GUI.color = Color.white;
+            return enabled;
         }
 
         private void DrawGraph(Rect rect)
