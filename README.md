@@ -4,7 +4,7 @@ Watcher is a lightweight RimWorld 1.6 performance monitor. Press **Shift+6** in 
 
 ## Build
 
-1. Install .NET Framework 4.7.2 developer/reference assemblies and a C# build tool such as Visual Studio or MSBuild.
+1. Install the **.NET Framework 4.7.2 Developer Pack** (not just the Runtime) to get the `net472` reference assemblies, plus the .NET SDK or a C# build tool such as Visual Studio/MSBuild.
 2. Set `RimWorldDir` to your RimWorld installation directory and `HarmonyDir` to the folder containing `0Harmony.dll` (often the Harmony mod's `Current/Assemblies` folder). The equivalent environment variables are `RIMWORLD_DIR` and `HARMONY_DIR`.
 3. Build `Watcher.csproj` in Release configuration. The resulting `Watcher.dll` is copied into `Watcher/Assemblies`.
 4. Copy the `Watcher` folder into RimWorld's `Mods` directory and enable it in the mod list.
