@@ -18,6 +18,7 @@ namespace Watcher
     {
         public DateTime Time;
         public string Source;
+        public float StageDurationMs;
         public float DurationMs;
         public bool Critical;
     }
@@ -62,6 +63,8 @@ namespace Watcher
         public static int Pawns;
         public static int Maps;
         public static long ManagedMemoryBytes;
+        public static float LargestStageMs;
+        public static byte LargestStage;
         private static double tickTotal;
         private static int tickSamples;
         private static int frameCounter;
@@ -77,12 +80,29 @@ namespace Watcher
             Events.Clear();
             LastTickMs = AverageTickMs = MaxTickMs = Fps = Tps = FrameMs = 0f;
             LongTickCount = 0;
+            LargestStageMs = 0f;
+            LargestStage = 0;
             tickTotal = 0;
             tickSamples = 0;
             frameCounter = 0;
             tpsElapsed = sampleElapsed = graphElapsed = stateElapsed = 0f;
             tpsTicks = 0;
             Gc0 = GC.CollectionCount(0); Gc1 = GC.CollectionCount(1); Gc2 = GC.CollectionCount(2);
+        }
+
+        public static void BeginTick()
+        {
+            LargestStageMs = 0f;
+            LargestStage = 0;
+        }
+
+        public static void RecordStage(byte stage, float milliseconds)
+        {
+            if (milliseconds > LargestStageMs)
+            {
+                LargestStageMs = milliseconds;
+                LargestStage = stage;
+            }
         }
 
         public static void TickFinished(float milliseconds)
@@ -105,10 +125,19 @@ namespace Watcher
         {
             int limit = WatcherMod.Settings?.maxEvents ?? 100;
             if (Events.Count >= limit) Events.RemoveAt(0);
+            string source;
+            switch (LargestStage)
+            {
+                case 1: source = "Map pre-tick systems"; break;
+                case 2: source = "Thing and pawn tick batch"; break;
+                case 3: source = "Map post-tick systems"; break;
+                default: source = "No slow measured stage isolated"; break;
+            }
             Events.Add(new WatcherEvent
             {
                 Time = DateTime.Now,
-                Source = "Game tick (TickManager.DoSingleTick)",
+                Source = source,
+                StageDurationMs = LargestStageMs,
                 DurationMs = duration,
                 Critical = duration >= (WatcherMod.Settings?.criticalTickMs ?? 50f)
             });

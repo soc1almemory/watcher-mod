@@ -15,6 +15,7 @@ namespace Watcher
         {
             if (timer == null) timer = new Stopwatch();
             timer.Restart();
+            PerformanceData.BeginTick();
         }
 
         [HarmonyPostfix]

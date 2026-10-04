@@ -26,9 +26,9 @@ Game assemblies are referenced from `RimWorldWin64_Data/Managed`. Harmony is ref
 - **Memory** is the managed heap size reported by `GC.GetTotalMemory(false)`; it is not total process or GPU memory.
 - Pawn/map counts and game speed are snapshots from the active game state.
 
-Watcher reports a long tick's measured source as `TickManager.DoSingleTick` (the whole game simulation tick) and records its measured duration. This does not identify which system or mod consumed that time, so mod attribution remains unknown. Events are correlated observations. Rendering time and main-thread utilization are omitted because the game does not expose reliable measurements to this mod.
+For each long tick, Watcher records the whole `TickManager.DoSingleTick` duration and the longest of three measured slices: map pre-tick, the `TickList.Tick` thing/pawn batch, and map post-tick. The event shows the slice and its duration alongside the whole-tick duration. This narrows down which broad phase coincided with the slow tick; it does not prove that phase caused the delay or identify which mod consumed the time. Mod attribution is not inferred. Rendering time and main-thread utilization are omitted because the game does not expose reliable measurements to this mod.
 
-The monitor uses one Harmony prefix/postfix pair, a fixed-size graph ring buffer, a bounded event queue, and no per-tick logging or stack traces. Telemetry is session-only and is reset on game load. Settings are stored using RimWorld's normal mod settings mechanism.
+The monitor uses a small set of Harmony timing hooks around the overall tick and three broad tick phases, a fixed-size graph ring buffer, a bounded event queue, and no per-tick logging or stack traces. Telemetry is session-only and is reset on game load. Settings are stored using RimWorld's normal mod settings mechanism.
 
 ## Controls
 
