@@ -38,3 +38,7 @@ The monitor uses a small set of Harmony timing hooks around the overall tick and
 ## Controls
 
 The dashboard shows current metrics, a 60-second history graph, and recent long-tick events. Settings expose the long-tick and critical thresholds, retained event count, and history window. The event list can be cleared from the dashboard.
+
+## License
+
+This repository is licensed under the [MIT License](LICENSE).
