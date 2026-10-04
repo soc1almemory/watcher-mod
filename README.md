@@ -4,6 +4,9 @@ Watcher is a lightweight RimWorld performance monitor. Press **Shift+6** in game
 
 <img width="1920" height="512" alt="Banner" src="https://github.com/user-attachments/assets/08b86c56-b73b-484d-859c-3f46b72610f9" />
 
+## Steam Workshop
+
+Watcher is available for download on Steam Workshop. You can find it [here](https://steamcommunity.com/sharedfiles/filedetails/?id=3813463709).
 
 ## Build
 
