@@ -50,7 +50,7 @@ namespace Watcher
             Metric(new Rect(metrics.x + 8f + col * 4, metrics.y + 5f, col, 40f), "MANAGED HEAP", (PerformanceData.ManagedMemoryBytes / 1048576f).ToString("F0") + " MB");
             Metric(new Rect(metrics.x + 8f + col * 0, metrics.y + 50f, col, 40f), "PAWNS / MAPS", PerformanceData.Pawns + " / " + PerformanceData.Maps);
             Metric(new Rect(metrics.x + 8f + col * 1, metrics.y + 50f, col, 40f), "GAME SPEED", Find.TickManager?.CurTimeSpeed.ToString() ?? "—");
-            Metric(new Rect(metrics.x + 8f + col * 2, metrics.y + 50f, col, 40f), "PEAK TICK", PerformanceData.MaxTickMs.ToString("F1") + " ms");
+            Metric(new Rect(metrics.x + 8f + col * 2, metrics.y + 50f, col, 40f), "P95 / PEAK TICK", PerformanceData.P95TickMs.ToString("F1") + " / " + PerformanceData.MaxTickMs.ToString("F1") + " ms");
             Metric(new Rect(metrics.x + 8f + col * 3, metrics.y + 50f, col, 40f), "LONG TICKS", PerformanceData.LongTickCount.ToString());
             Metric(new Rect(metrics.x + 8f + col * 4, metrics.y + 50f, col, 40f), "GC 0 / 1 / 2", PerformanceData.Gc0 + " / " + PerformanceData.Gc1 + " / " + PerformanceData.Gc2);
 

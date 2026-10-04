@@ -50,11 +50,18 @@ namespace Watcher
 
     internal static class PerformanceData
     {
+        private const int TickWindowCapacity = 1200;
+        private static readonly float[] recentTickDurations = new float[TickWindowCapacity];
+        private static readonly float[] tickPercentileScratch = new float[TickWindowCapacity];
+        private static int nextTickDuration;
+        private static int tickDurationCount;
+
         public static readonly CircularSamples History = new CircularSamples();
         public static readonly List<WatcherEvent> Events = new List<WatcherEvent>(100);
         public static float LastTickMs;
         public static float AverageTickMs;
         public static float MaxTickMs;
+        public static float P95TickMs;
         public static float Fps;
         public static float Tps;
         public static float FrameMs;
@@ -84,11 +91,14 @@ namespace Watcher
             History.Clear();
             Events.Clear();
             LastTickMs = AverageTickMs = MaxTickMs = Fps = Tps = FrameMs = 0f;
+            P95TickMs = 0f;
             LongTickCount = 0;
             LargestStageMs = 0f;
             LargestStage = 0;
             tickTotal = 0;
             tickSamples = 0;
+            nextTickDuration = 0;
+            tickDurationCount = 0;
             frameCounter = 0;
             tpsElapsed = sampleElapsed = graphElapsed = stateElapsed = 0f;
             tpsTicks = 0;
@@ -123,6 +133,9 @@ namespace Watcher
             tickSamples++;
             AverageTickMs = (float)(tickTotal / tickSamples);
             if (milliseconds > MaxTickMs) MaxTickMs = milliseconds;
+            recentTickDurations[nextTickDuration] = milliseconds;
+            nextTickDuration = (nextTickDuration + 1) % TickWindowCapacity;
+            if (tickDurationCount < TickWindowCapacity) tickDurationCount++;
             tpsTicks++;
             float longThreshold = WatcherMod.Settings?.longTickMs ?? 20f;
             if (milliseconds >= longThreshold)
@@ -185,6 +198,7 @@ namespace Watcher
                 Gc1 = GC.CollectionCount(1) - gc1AtReset;
                 Gc2 = GC.CollectionCount(2) - gc2AtReset;
                 ManagedMemoryBytes = GC.GetTotalMemory(false);
+                UpdateP95TickDuration();
                 UpdateStateSnapshot();
             }
 
@@ -217,6 +231,20 @@ namespace Watcher
             Maps = Find.Maps.Count;
             for (int i = 0; i < Find.Maps.Count; i++)
                 Pawns += Find.Maps[i].mapPawns?.AllPawnsSpawned?.Count ?? 0;
+        }
+
+        private static void UpdateP95TickDuration()
+        {
+            if (tickDurationCount == 0)
+            {
+                P95TickMs = 0f;
+                return;
+            }
+
+            Array.Copy(recentTickDurations, tickPercentileScratch, tickDurationCount);
+            Array.Sort(tickPercentileScratch, 0, tickDurationCount);
+            int percentileIndex = (int)Math.Ceiling(tickDurationCount * 0.95) - 1;
+            P95TickMs = tickPercentileScratch[percentileIndex];
         }
     }
 }

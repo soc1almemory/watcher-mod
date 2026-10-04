@@ -20,7 +20,7 @@ Game assemblies are referenced from `RimWorldWin64_Data/Managed`. Harmony is ref
 ## What is measured
 
 - **FPS** is calculated from Unity's unscaled frame delta; frame time is the same sampled value in milliseconds.
-- **Tick duration** is measured around `TickManager.DoSingleTick` using a monotonic stopwatch. Average and maximum values cover the current monitoring session. Counts use configured warning and critical thresholds.
+- **Tick duration** is measured around `TickManager.DoSingleTick` using a monotonic stopwatch. Average and maximum values cover the current monitoring session. The 95th percentile uses up to the latest 1,200 ticks and refreshes once per second, making recurring slow ticks visible without treating a single spike as typical. Counts use configured warning and critical thresholds.
 - **TPS** is a one-second rolling observed tick rate. It is not a promise that the simulation is keeping pace with wall time.
 - **GC collections** are session counts derived from .NET collection counters. They do not provide per-frame allocated bytes or reliable attribution to a mod.
 - **Memory** is the managed heap size reported by `GC.GetTotalMemory(false)`; it is not total process or GPU memory.
