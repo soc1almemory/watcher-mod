@@ -1,6 +1,6 @@
 # Watcher
 
-Watcher is a lightweight RimWorld 1.6 performance monitor. Press **Shift+6** in game to open or close its dashboard.
+Watcher is a lightweight RimWorld performance monitor. Press **Shift+6** in game to open or close its dashboard.
 
 <img width="1920" height="512" alt="Banner" src="https://github.com/user-attachments/assets/08b86c56-b73b-484d-859c-3f46b72610f9" />
 
