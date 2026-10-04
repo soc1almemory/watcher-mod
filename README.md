@@ -12,12 +12,6 @@ Watcher is a lightweight RimWorld 1.6 performance monitor. Press **Shift+6** in 
 3. Build `Watcher.csproj` in Release configuration. The resulting `Watcher.dll` is copied into `Watcher/Assemblies`.
 4. Copy the `Watcher` folder into RimWorld's `Mods` directory and enable it in the mod list.
 
-Example:
-
-```powershell
-dotnet build .\Watcher\Watcher.csproj -c Release -p:RimWorldDir="D:\Games\Steam\steamapps\common\RimWorld" -p:HarmonyDir="D:\Games\Steam\steamapps\workshop\content\294100\2009463077\Current\Assemblies"
-```
-
 Game assemblies are referenced from `RimWorldWin64_Data/Managed`. Harmony is referenced from the separately installed Harmony mod. Neither is distributed with this project.
 
 ## What is measured
