@@ -18,6 +18,8 @@ namespace Watcher
     {
         public DateTime Time;
         public string Source;
+        public string PatchedBy;
+        public string PatchTooltip;
         public float StageDurationMs;
         public float DurationMs;
         public bool Critical;
@@ -128,15 +130,20 @@ namespace Watcher
             string source;
             switch (LargestStage)
             {
-                case 1: source = "Map pre-tick systems"; break;
-                case 2: source = "Thing and pawn tick batch"; break;
-                case 3: source = "Map post-tick systems"; break;
-                default: source = "No slow measured stage isolated"; break;
+                case 1: source = "Map pre-tick"; break;
+                case 2: source = "Thing/pawn batch"; break;
+                case 3: source = "Map post-tick"; break;
+                default: source = "No phase isolated"; break;
             }
+            string patchedBy = LargestStage == 0 ? "Not isolated" : TickStageInstrumentation.GetPatchOwners(LargestStage);
             Events.Add(new WatcherEvent
             {
                 Time = DateTime.Now,
                 Source = source,
+                PatchedBy = patchedBy,
+                PatchTooltip = LargestStage == 0
+                    ? "No slow phase was isolated from the sampled tick."
+                    : "Harmony owners patching this measured stage (context only; not proof of cause):\n" + patchedBy,
                 StageDurationMs = LargestStageMs,
                 DurationMs = duration,
                 Critical = duration >= (WatcherMod.Settings?.criticalTickMs ?? 50f)
