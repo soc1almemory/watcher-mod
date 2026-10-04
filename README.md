@@ -25,7 +25,7 @@ Game assemblies are referenced from `RimWorldWin64_Data/Managed`. Harmony is ref
 
 For each long tick, Watcher records the whole `TickManager.DoSingleTick` duration and the longest of three measured slices: map pre-tick, the `TickList.Tick` thing/pawn batch, and map post-tick. The event shows the slice and its duration alongside the whole-tick duration. This narrows down which broad phase coincided with the slow tick; it does not prove that phase caused the delay or identify which mod consumed the time. Mod attribution is not inferred. Rendering time and main-thread utilization are omitted because the game does not expose reliable measurements to this mod.
 
-For extra context, event rows list Harmony owners with patches on the measured method. Hover the list to see the full names. These are mods that patch that method, not a ranking of their runtime cost. HugsLib has utilities for describing Harmony patches and counters for its own distributed tick scheduler, but it does not provide per-mod execution timings. Prepatcher is a load-time rewriting API, not a runtime profiler. Watcher therefore has no dependency on either library.
+For extra context, event rows list Harmony owners with patches on the measured method. Hover the list to see the full names. These are mods that patch that method, not a ranking of their runtime cost.
 
 The monitor uses a small set of Harmony timing hooks around the overall tick and three broad tick phases, a fixed-size graph ring buffer, a bounded event queue, and no per-tick logging or stack traces. Telemetry is session-only and is reset on game load. Settings are stored using RimWorld's normal mod settings mechanism.
 
