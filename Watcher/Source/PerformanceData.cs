@@ -135,14 +135,14 @@ namespace Watcher
                 case 3: source = "Map post-tick"; break;
                 default: source = "No phase isolated"; break;
             }
-            string patchedBy = LargestStage == 0 ? "Not isolated" : TickStageInstrumentation.GetPatchOwners(LargestStage);
+            string patchedBy = TickStageInstrumentation.GetPatchOwners(LargestStage);
             Events.Add(new WatcherEvent
             {
                 Time = DateTime.Now,
                 Source = source,
                 PatchedBy = patchedBy,
-                PatchTooltip = LargestStage == 0
-                    ? "No slow phase was isolated from the sampled tick."
+                PatchTooltip = string.IsNullOrEmpty(patchedBy)
+                    ? null
                     : "Harmony owners patching this measured stage (context only; not proof of cause):\n" + patchedBy,
                 StageDurationMs = LargestStageMs,
                 DurationMs = duration,

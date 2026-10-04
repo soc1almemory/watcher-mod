@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text;
@@ -7,8 +6,8 @@ using Verse;
 
 namespace Watcher
 {
-    // Measure only a few broad tick stages; these identify where time was spent, not which mod caused it.
-    [HarmonyPatch]
+    // Patch callbacks deliberately avoid Harmony's __originalMethod injection. Some compatibility
+    // layers invoke Harmony postfixes themselves and do not populate that special argument.
     internal static class TickStageInstrumentation
     {
         private const string WatcherOwner = "soc1almemory.watcher.performance";
@@ -16,37 +15,19 @@ namespace Watcher
         private static readonly MethodBase TickListTick = AccessTools.Method(typeof(TickList), "Tick");
         private static readonly MethodBase MapPostTick = AccessTools.Method(typeof(Map), "MapPostTick");
 
-        [HarmonyTargetMethods]
-        private static IEnumerable<MethodBase> TargetMethods()
+        public static void Record(byte stage, long startedAt)
         {
-            yield return MapPreTick;
-            yield return TickListTick;
-            yield return MapPostTick;
-        }
-
-        [HarmonyPrefix]
-        private static void Prefix(MethodBase __originalMethod, out long __state)
-        {
-            __state = Stopwatch.GetTimestamp();
-        }
-
-        [HarmonyPostfix]
-        private static void Postfix(MethodBase __originalMethod, long __state)
-        {
-            float milliseconds = (float)((Stopwatch.GetTimestamp() - __state) * 1000.0 / Stopwatch.Frequency);
-            byte stage = __originalMethod.DeclaringType == typeof(TickList) ? (byte)2
-                : __originalMethod.Name == "MapPreTick" ? (byte)1 : (byte)3;
+            float milliseconds = (float)((Stopwatch.GetTimestamp() - startedAt) * 1000.0 / Stopwatch.Frequency);
             PerformanceData.RecordStage(stage, milliseconds);
         }
 
-        // Patch owners are contextual clues for the measured method, not proof that a mod caused the delay.
+        // Patch owners are context for the measured method, not proof that a mod caused the delay.
         public static string GetPatchOwners(byte stage)
         {
-            if (stage == 0) return "Not isolated";
+            if (stage == 0) return null;
             MethodBase method = stage == 1 ? MapPreTick : stage == 2 ? TickListTick : MapPostTick;
             Patches patches = Harmony.GetPatchInfo(method);
-            if (patches == null || patches.Owners == null || patches.Owners.Count == 0)
-                return "None recorded";
+            if (patches == null || patches.Owners == null || patches.Owners.Count == 0) return null;
 
             StringBuilder names = new StringBuilder(96);
             int listed = 0;
@@ -72,7 +53,28 @@ namespace Watcher
                 listed++;
             }
             if (additional > 0) names.Append(" +").Append(additional).Append(" more");
-            return listed == 0 ? "None recorded" : names.ToString();
+            return listed == 0 ? null : names.ToString();
         }
+    }
+
+    [HarmonyPatch(typeof(Map), "MapPreTick")]
+    internal static class MapPreTickInstrumentation
+    {
+        [HarmonyPrefix] private static void Prefix(out long __state) => __state = Stopwatch.GetTimestamp();
+        [HarmonyPostfix] private static void Postfix(long __state) => TickStageInstrumentation.Record(1, __state);
+    }
+
+    [HarmonyPatch(typeof(TickList), "Tick")]
+    internal static class TickListInstrumentation
+    {
+        [HarmonyPrefix] private static void Prefix(out long __state) => __state = Stopwatch.GetTimestamp();
+        [HarmonyPostfix] private static void Postfix(long __state) => TickStageInstrumentation.Record(2, __state);
+    }
+
+    [HarmonyPatch(typeof(Map), "MapPostTick")]
+    internal static class MapPostTickInstrumentation
+    {
+        [HarmonyPrefix] private static void Prefix(out long __state) => __state = Stopwatch.GetTimestamp();
+        [HarmonyPostfix] private static void Postfix(long __state) => TickStageInstrumentation.Record(3, __state);
     }
 }

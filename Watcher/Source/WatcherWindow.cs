@@ -83,8 +83,9 @@ namespace Watcher
                 Widgets.Label(new Rect(row.x + 62, row.y, 48, row.height), item.Critical ? "CRIT" : "WARN");
                 Widgets.Label(new Rect(row.x + 116, row.y, 122, row.height), item.Source);
                 Rect patchRect = new Rect(row.x + 244, row.y, 192, row.height);
-                Widgets.Label(patchRect, item.PatchedBy);
-                TooltipHandler.TipRegion(patchRect, new TipSignal(item.PatchTooltip, item.GetHashCode()));
+                Widgets.Label(patchRect, item.PatchedBy ?? "—");
+                if (!string.IsNullOrEmpty(item.PatchTooltip))
+                    TooltipHandler.TipRegion(patchRect, new TipSignal(item.PatchTooltip, item.GetHashCode()));
                 Widgets.Label(new Rect(row.x + 442, row.y, 74, row.height), item.StageDurationMs.ToString("F1") + " part");
                 Widgets.Label(new Rect(row.x + 522, row.y, 84, row.height), item.DurationMs.ToString("F1") + " total");
                 GUI.color = Color.white;
