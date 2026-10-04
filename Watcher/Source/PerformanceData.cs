@@ -75,6 +75,9 @@ namespace Watcher
         private static float sampleElapsed;
         private static float graphElapsed;
         private static float stateElapsed;
+        private static int gc0AtReset;
+        private static int gc1AtReset;
+        private static int gc2AtReset;
 
         public static void Reset()
         {
@@ -89,7 +92,13 @@ namespace Watcher
             frameCounter = 0;
             tpsElapsed = sampleElapsed = graphElapsed = stateElapsed = 0f;
             tpsTicks = 0;
-            Gc0 = GC.CollectionCount(0); Gc1 = GC.CollectionCount(1); Gc2 = GC.CollectionCount(2);
+            gc0AtReset = GC.CollectionCount(0);
+            gc1AtReset = GC.CollectionCount(1);
+            gc2AtReset = GC.CollectionCount(2);
+            Gc0 = Gc1 = Gc2 = 0;
+            Pawns = Maps = 0;
+            ManagedMemoryBytes = GC.GetTotalMemory(false);
+            UpdateStateSnapshot();
         }
 
         public static void BeginTick()
@@ -172,18 +181,11 @@ namespace Watcher
             if (stateElapsed >= 1f)
             {
                 stateElapsed = 0f;
-                Gc0 = GC.CollectionCount(0); Gc1 = GC.CollectionCount(1); Gc2 = GC.CollectionCount(2);
+                Gc0 = GC.CollectionCount(0) - gc0AtReset;
+                Gc1 = GC.CollectionCount(1) - gc1AtReset;
+                Gc2 = GC.CollectionCount(2) - gc2AtReset;
                 ManagedMemoryBytes = GC.GetTotalMemory(false);
-                if (Current.Game != null)
-                {
-                    Pawns = 0;
-                    if (Find.Maps != null)
-                    {
-                        Maps = Find.Maps.Count;
-                        for (int i = 0; i < Find.Maps.Count; i++) Pawns += Find.Maps[i].mapPawns?.AllPawnsSpawned?.Count ?? 0;
-                    }
-                    else Maps = 0;
-                }
+                UpdateStateSnapshot();
             }
 
             if (FrameMs > 0f)
@@ -205,5 +207,16 @@ namespace Watcher
         }
 
         public static void ClearEvents() => Events.Clear();
+
+        private static void UpdateStateSnapshot()
+        {
+            Pawns = 0;
+            Maps = 0;
+            if (Current.Game == null || Find.Maps == null) return;
+
+            Maps = Find.Maps.Count;
+            for (int i = 0; i < Find.Maps.Count; i++)
+                Pawns += Find.Maps[i].mapPawns?.AllPawnsSpawned?.Count ?? 0;
+        }
     }
 }

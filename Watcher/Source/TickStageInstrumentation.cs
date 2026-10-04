@@ -26,10 +26,12 @@ namespace Watcher
         {
             if (stage == 0) return null;
             MethodBase method = stage == 1 ? MapPreTick : stage == 2 ? TickListTick : MapPostTick;
+            if (method == null) return null;
             Patches patches = Harmony.GetPatchInfo(method);
             if (patches == null || patches.Owners == null || patches.Owners.Count == 0) return null;
 
             StringBuilder names = new StringBuilder(96);
+            var mods = LoadedModManager.RunningModsListForReading;
             int listed = 0;
             int additional = 0;
             foreach (string owner in patches.Owners)
@@ -38,7 +40,6 @@ namespace Watcher
                 if (listed >= 4) { additional++; continue; }
 
                 string name = owner;
-                var mods = LoadedModManager.RunningModsListForReading;
                 for (int i = 0; i < mods.Count; i++)
                 {
                     if (string.Equals(mods[i].PackageId, owner, System.StringComparison.OrdinalIgnoreCase))
