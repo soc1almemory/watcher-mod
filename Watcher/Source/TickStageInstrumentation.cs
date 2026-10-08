@@ -11,6 +11,7 @@ namespace Watcher
     internal static class TickStageInstrumentation
     {
         private const string WatcherOwner = "soc1almemory.watcher.performance";
+        private const string WatcherCaptureOwner = "soc1almemory.watcher.diagnosticcapture";
         private static readonly MethodBase MapPreTick = AccessTools.Method(typeof(Map), "MapPreTick");
         private static readonly MethodBase TickListTick = AccessTools.Method(typeof(TickList), "Tick");
         private static readonly MethodBase MapPostTick = AccessTools.Method(typeof(Map), "MapPostTick");
@@ -30,6 +31,12 @@ namespace Watcher
             if (patchOwnerResolved[stage]) return patchOwnerCache[stage];
             patchOwnerResolved[stage] = true;
             MethodBase method = stage == 1 ? MapPreTick : stage == 2 ? TickListTick : MapPostTick;
+            patchOwnerCache[stage] = GetPatchOwners(method);
+            return patchOwnerCache[stage];
+        }
+
+        public static string GetPatchOwners(MethodBase method)
+        {
             if (method == null) return null;
             Patches patches = Harmony.GetPatchInfo(method);
             if (patches == null || patches.Owners == null || patches.Owners.Count == 0) return null;
@@ -40,7 +47,8 @@ namespace Watcher
             int additional = 0;
             foreach (string owner in patches.Owners)
             {
-                if (string.Equals(owner, WatcherOwner, System.StringComparison.OrdinalIgnoreCase)) continue;
+                if (string.Equals(owner, WatcherOwner, System.StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(owner, WatcherCaptureOwner, System.StringComparison.OrdinalIgnoreCase)) continue;
                 if (listed >= 4) { additional++; continue; }
 
                 string name = owner;
@@ -58,8 +66,7 @@ namespace Watcher
                 listed++;
             }
             if (additional > 0) names.Append(" +").Append(additional).Append(" more");
-            patchOwnerCache[stage] = listed == 0 ? null : names.ToString();
-            return patchOwnerCache[stage];
+            return listed == 0 ? null : names.ToString();
         }
     }
 

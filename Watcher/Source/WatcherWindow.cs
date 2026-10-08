@@ -26,11 +26,11 @@ namespace Watcher
             closeOnClickedOutside = false;
             draggable = true;
             resizeable = false;
-            windowRect = new Rect(120f, 80f, 680f, 460f);
+            windowRect = new Rect(120f, 80f, 780f, 540f);
             preventCameraMotion = false;
         }
 
-        public override Vector2 InitialSize => new Vector2(680f, 460f);
+        public override Vector2 InitialSize => new Vector2(780f, 540f);
 
         public override void PreClose()
         {
@@ -71,8 +71,19 @@ namespace Watcher
 
             Rect events = new Rect(inRect.x, graph.yMax + 6f, inRect.width, inRect.yMax - graph.yMax - 12f);
             Widgets.DrawMenuSection(events);
-            Widgets.Label(new Rect(events.x + 8, events.y + 3, events.width - 100, 24), "SLOW TICK MONITORING");
-            if (Widgets.ButtonText(new Rect(events.xMax - 72, events.y + 2, 64, 22), "Clear")) PerformanceData.ClearEvents();
+            Widgets.Label(new Rect(events.x + 8, events.y + 3, 260, 24), "SLOW TICK EVENTS");
+            if (DiagnosticCapture.IsActive)
+            {
+                Widgets.Label(new Rect(events.x + 260, events.y + 3, 130, 22), "Capturing: " + DiagnosticCapture.RemainingSeconds.ToString("F0") + " s");
+                if (Widgets.ButtonText(new Rect(events.xMax - 264, events.y + 2, 64, 22), "Stop")) DiagnosticCapture.Stop();
+            }
+            else if (Widgets.ButtonText(new Rect(events.xMax - 264, events.y + 2, 104, 22), "Capture " + WatcherMod.Settings.captureSeconds.ToString("F0") + "s"))
+                DiagnosticCapture.Start(WatcherMod.Settings.captureSeconds);
+            if (DiagnosticCapture.HasReport && Widgets.ButtonText(new Rect(events.xMax - 152, events.y + 2, 68, 22), "Report"))
+                Find.WindowStack.Add(new DiagnosticReportWindow());
+            if (Widgets.ButtonText(new Rect(events.xMax - 76, events.y + 2, 68, 22), "Clear")) PerformanceData.ClearEvents();
+            TooltipHandler.TipRegion(new Rect(events.x + 8, events.y + 3, 250, 24),
+                new TipSignal("Hover a slow-tick row for measured workload and colony context. Capture records detailed method timings for a short period."));
             Rect list = new Rect(events.x + 6, events.y + 28, events.width - 12, events.height - 32);
             float contentHeight = PerformanceData.Events.Count * 23f;
             Rect view = new Rect(0, 0, list.width - 16, Mathf.Max(list.height, contentHeight));
@@ -87,12 +98,12 @@ namespace Watcher
                 Widgets.Label(new Rect(row.x + 4, row.y, 54, row.height), item.Time.ToString("HH:mm:ss"));
                 Widgets.Label(new Rect(row.x + 62, row.y, 48, row.height), item.Critical ? "CRIT" : "WARN");
                 Widgets.Label(new Rect(row.x + 116, row.y, 122, row.height), item.Source);
-                Rect patchRect = new Rect(row.x + 244, row.y, 192, row.height);
-                Widgets.Label(patchRect, item.PatchedBy ?? "—");
-                if (!string.IsNullOrEmpty(item.PatchTooltip))
-                    TooltipHandler.TipRegion(patchRect, new TipSignal(item.PatchTooltip, item.GetHashCode()));
-                Widgets.Label(new Rect(row.x + 442, row.y, 74, row.height), item.StageDurationMs.ToString("F1") + " part");
-                Widgets.Label(new Rect(row.x + 522, row.y, 84, row.height), item.DurationMs.ToString("F1") + " total");
+                Rect patchRect = new Rect(row.x + 244, row.y, 204, row.height);
+                Widgets.Label(patchRect, item.PatchedBy ?? "None on method");
+                Widgets.Label(new Rect(row.x + 454, row.y, 92, row.height), item.StageDurationMs.ToString("F1") + " ms phase");
+                Widgets.Label(new Rect(row.x + 550, row.y, 94, row.height), item.DurationMs.ToString("F1") + " ms total");
+                if (Mouse.IsOver(row))
+                    TooltipHandler.TipRegion(row, new TipSignal(item.GetDiagnosticText(), item.GetHashCode() ^ 0x51A7));
                 GUI.color = Color.white;
             }
             Widgets.EndScrollView();

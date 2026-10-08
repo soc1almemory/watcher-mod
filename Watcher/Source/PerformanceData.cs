@@ -18,10 +18,43 @@ namespace Watcher
         public DateTime Time;
         public string Source;
         public string PatchedBy;
-        public string PatchTooltip;
+        public string StageMethod;
+        public string GameSpeed;
         public float StageDurationMs;
         public float DurationMs;
+        public float StageSharePercent;
+        public int StageCallCount;
+        public int PawnCount;
+        public int MapCount;
         public bool Critical;
+        private string diagnosticText;
+
+        public string GetDiagnosticText()
+        {
+            if (diagnosticText != null) return diagnosticText;
+            var text = new System.Text.StringBuilder(320);
+            text.Append("Tick duration: ").Append(DurationMs.ToString("F1")).Append(" ms. ");
+            if (StageMethod == null)
+                text.AppendLine("No measured broad phase stood out; important work may be outside Watcher's current phase hooks.");
+            else
+                text.Append(Source).Append(" was the slowest measured phase: ").Append(StageDurationMs.ToString("F1"))
+                    .Append(" ms across ").Append(StageCallCount).Append(" invocation(s), about ").Append(StageSharePercent.ToString("F0"))
+                    .AppendLine("% of the whole tick. This phase timing includes all code running inside it.");
+
+            text.Append("Colony snapshot: ").Append(PawnCount).Append(" spawned pawns across ").Append(MapCount).Append(" map(s)");
+            if (!string.IsNullOrEmpty(GameSpeed)) text.Append("; game speed ").Append(GameSpeed);
+            text.AppendLine(".");
+            if (StageMethod == null)
+                text.Append("Direct patch owners: none available for an unisolated phase.");
+            else if (string.IsNullOrEmpty(PatchedBy))
+                text.Append("Direct patch evidence: no loaded mod Harmony patch was found on ").Append(StageMethod)
+                    .Append(". Mods may still affect called methods or increase the amount of work indirectly.");
+            else
+                text.Append("Patch context on ").Append(StageMethod).Append(": ").Append(PatchedBy)
+                    .Append(". These mods patch this method; the timing does not show which patch consumed the time.");
+            diagnosticText = text.ToString();
+            return diagnosticText;
+        }
     }
 
     internal sealed class CircularSamples
@@ -118,6 +151,8 @@ namespace Watcher
         public static long ManagedMemoryBytes;
         public static float LargestStageMs;
         public static byte LargestStage;
+        private static readonly float[] stageDurations = new float[4];
+        private static readonly int[] stageCallCounts = new int[4];
         private static double tickTotal;
         private static int tickSamples;
         private static int frameCounter;
@@ -132,6 +167,7 @@ namespace Watcher
 
         public static void Reset()
         {
+            DiagnosticCapture.Reset();
             History.Clear();
             Events.Clear();
             LastTickMs = AverageTickMs = MaxTickMs = Fps = Tps = FrameMs = 0f;
@@ -139,6 +175,8 @@ namespace Watcher
             LongTickCount = 0;
             LargestStageMs = 0f;
             LargestStage = 0;
+            Array.Clear(stageDurations, 0, stageDurations.Length);
+            Array.Clear(stageCallCounts, 0, stageCallCounts.Length);
             tickTotal = 0;
             tickSamples = 0;
             nextTickDuration = 0;
@@ -159,13 +197,18 @@ namespace Watcher
         {
             LargestStageMs = 0f;
             LargestStage = 0;
+            Array.Clear(stageDurations, 0, stageDurations.Length);
+            Array.Clear(stageCallCounts, 0, stageCallCounts.Length);
         }
 
         public static void RecordStage(byte stage, float milliseconds)
         {
-            if (milliseconds > LargestStageMs)
+            if (stage <= 0 || stage >= stageDurations.Length) return;
+            stageDurations[stage] += milliseconds;
+            stageCallCounts[stage]++;
+            if (stageDurations[stage] > LargestStageMs)
             {
-                LargestStageMs = milliseconds;
+                LargestStageMs = stageDurations[stage];
                 LargestStage = stage;
             }
         }
@@ -201,23 +244,32 @@ namespace Watcher
                 default: source = "No phase isolated"; break;
             }
             string patchedBy = TickStageInstrumentation.GetPatchOwners(LargestStage);
+            bool critical = duration >= (WatcherMod.Settings?.criticalTickMs ?? 50f);
+            float stageShare = duration > 0f ? Mathf.Clamp01(LargestStageMs / duration) * 100f : 0f;
+            int stageCalls = LargestStage > 0 ? stageCallCounts[LargestStage] : 0;
+            string stageMethod = LargestStage == 1 ? "Map.MapPreTick" : LargestStage == 2 ? "TickList.Tick" : LargestStage == 3 ? "Map.MapPostTick" : null;
             Events.Add(new WatcherEvent
             {
                 Time = DateTime.Now,
                 Source = source,
                 PatchedBy = patchedBy,
-                PatchTooltip = string.IsNullOrEmpty(patchedBy)
-                    ? null
-                    : "Harmony owners patching this measured stage (context only; not proof of cause):\n" + patchedBy,
+                StageMethod = stageMethod,
+                GameSpeed = Find.TickManager?.CurTimeSpeed.ToString(),
                 StageDurationMs = LargestStageMs,
+                StageSharePercent = stageShare,
+                StageCallCount = stageCalls,
+                PawnCount = Pawns,
+                MapCount = Maps,
                 DurationMs = duration,
-                Critical = duration >= (WatcherMod.Settings?.criticalTickMs ?? 50f)
+                Critical = critical,
             }, limit);
+            if (critical) DiagnosticCapture.AutoStartAfterCriticalTick();
         }
 
         public static void FrameUpdate()
         {
             float dt = Time.unscaledDeltaTime;
+            DiagnosticCapture.Update(dt);
             if (dt > 0f)
             {
                 frameCounter++;

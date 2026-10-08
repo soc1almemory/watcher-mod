@@ -26,15 +26,17 @@ Game assemblies are referenced from `RimWorldWin64_Data/Managed`. Harmony is ref
 - **Memory** is the managed heap size reported by `GC.GetTotalMemory(false)`; it is not total process or GPU memory.
 - Pawn/map counts and game speed are snapshots from the active game state; the pawn count includes spawned pawns on loaded maps.
 
-For each long tick, Watcher records the whole `TickManager.DoSingleTick` duration and the longest of three measured slices: map pre-tick, the `TickList.Tick` thing/pawn batch, and map post-tick. The event shows the slice and its duration alongside the whole-tick duration. This narrows down which broad phase coincided with the slow tick; it does not prove that phase caused the delay or identify which mod consumed the time. Mod attribution is not inferred. Rendering time and main-thread utilization are omitted because the game does not expose reliable measurements to this mod.
+For each long tick, Watcher records the whole `TickManager.DoSingleTick` duration and the largest aggregate of three measured slices across loaded maps: map pre-tick, the `TickList.Tick` thing/pawn batch, and map post-tick. Hover an event for the measured phase share, pawn/map snapshot, and an explanation of what the patch-owner field means. These broad phases narrow down where time was spent but do not prove which mod caused the delay. A dash is shown as “None on method” when no mod patches that exact measured method; mods may still affect called methods or increase the amount of work indirectly.
+
+The dashboard can run a short diagnostic capture manually, or automatically after a critical tick when enabled in settings. Captures measure selected workload methods for pawn job/AI updates, pathfinding, reachable-target searches, pawn health updates, and map region rebuilds. The report includes call counts, inclusive accumulated time, peak call time, short explanations, and Harmony patch owners for the measured methods. Categories can overlap when one calls another, so their totals must not be added together. Patch owners are candidates for investigation, not proof of cause; transpilers and indirect effects cannot be cleanly assigned to one mod. Detailed timings are collected only during a capture.
 
 For extra context, event rows list Harmony owners with patches on the measured method. Hover the list to see the full names. These are mods that patch that method, not a ranking of their runtime cost.
 
-The monitor uses a small set of Harmony timing hooks around the overall tick and three broad tick phases, a fixed-size graph ring buffer, a bounded event queue, and no per-tick logging or stack traces. Telemetry is session-only and is reset on game load. Settings are stored using RimWorld's normal mod settings mechanism.
+The monitor uses a small set of Harmony timing hooks around the overall tick and three broad tick phases, a fixed-size graph ring buffer, a bounded event queue, and no per-tick logging or stack traces. Detailed workload hooks are installed only for the duration of a capture and removed when it ends. Captures and telemetry are session-only and reset on game load. Settings are stored using RimWorld's normal mod settings mechanism.
 
 ## Controls
 
-The dashboard shows current metrics, a 60-second history graph, and recent long-tick events. Settings expose the long-tick and critical thresholds, retained event count, and history window. The event list can be cleared from the dashboard.
+The dashboard shows current metrics, a 60-second history graph, and recent long-tick events. Hover an event row for its explanation. Use **Capture** to collect a short workload profile and **Report** to review or copy the results. Settings expose the long-tick and critical thresholds, retained event count, history window, capture length, and optional automatic capture after a critical event. The event list can be cleared from the dashboard.
 
 ## License
 
