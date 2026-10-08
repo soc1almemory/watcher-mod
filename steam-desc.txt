@@ -1,46 +1,30 @@
 [h1]Watcher[/h1]
-It's a lightweight RimWorld performance monitor that helps you understand when and where the game is slowing down. Press [b]Shift+6[/b] in game to open or close the dashboard.
+Watcher is a lightweight RimWorld performance monitor that helps you see when the game slows down and investigate what work was happening. Press [b]Shift+6[/b] in game to open or close the dashboard.
 
 [img]https://files.catbox.moe/92ewpx.png[/img]
 
 [h2]What is measured[/h2]
 [list]
-[*][b]FPS[/b] is calculated from Unity's unscaled frame delta. Frame time uses the same sampled value, in milliseconds.
-[*][b]Tick duration[/b] is measured around [i]TickManager.DoSingleTick[/i] using a monotonic stopwatch. Average and maximum values cover the current monitoring session. The 95th percentile uses up to the latest 1,200 ticks, helping show whether slow ticks are recurring instead of highlighting only a single spike. Counts use the configured warning and critical thresholds.
-[*][b]TPS[/b] is a one-second rolling observed tick rate. It is not a promise that the simulation is keeping pace with wall time.
-[*][b]GC collections[/b] are session counts derived from .NET collection counters. They do not provide per-frame allocated bytes or reliable attribution to a mod.
-[*][b]Memory[/b] is the managed heap size reported by [i]GC.GetTotalMemory(false)[/i]. It is not total process or GPU memory.
-[*][b]Pawn/map counts and game speed[/b] are snapshots from the active game state. Pawn counts include spawned pawns on loaded maps.
+[*][b]FPS and frame time[/b] use Unity's unscaled frame delta.
+[*][b]Tick duration[/b] is measured around [i]TickManager.DoSingleTick[/i]. Watcher shows current, average, peak, and 95th-percentile tick times, plus warning and critical event counts.
+[*][b]TPS[/b] is the observed tick rate over a rolling one-second window. It does not guarantee that simulation keeps pace with wall time.
+[*][b]GC collections[/b] are session counts from .NET collection counters. They do not show allocated bytes or identify which mod caused a collection.
+[*][b]Managed memory[/b] is the heap size reported by [i]GC.GetTotalMemory(false)[/i], not total process or GPU memory.
+[*][b]Pawn/map counts and game speed[/b] are snapshots of the active game. Pawn counts include spawned pawns on loaded maps.
 [/list]
 
-[h2]Long-tick events[/h2]
-For each long tick, Watcher records the complete [i]TickManager.DoSingleTick[/i] duration along with the longest of three measured slices:
-[list]
-[*]Map pre-tick
-[*]The [i]TickList.Tick[/i] thing/pawn batch
-[*]Map post-tick
-[/list]
-The event shows the selected slice and its duration alongside the whole-tick duration. This helps narrow down which broad phase coincided with a slow tick.
-[b]Important:[/b] this does not prove that the measured phase caused the delay, nor does it identify which mod consumed the time. Watcher does not infer mod performance attribution.
-Rendering time and main-thread utilization are omitted because RimWorld does not expose reliable measurements for these to the mod.
+[h2]Understand slow ticks[/h2]
+For each long tick, Watcher records the whole tick duration and aggregates three broad phases across loaded maps: map pre-tick, the [i]TickList.Tick[/i] thing/pawn batch, and map post-tick. Hover an event to see its slowest measured phase, that phase's share of the tick, a colony snapshot, and an explanation of any listed patch owners. If no mod patches that exact method, the event says [i]None on method[/i] and explains what that means.
 
-[h2]Controls[/h2]
-The dashboard provides:
-[list]
-[*]Current performance metrics
-[*]A configurable history graph
-[*]Recent long-tick events
-[/list]
-Settings let you configure:
-[list]
-[*]Long-tick threshold
-[*]Critical threshold
-[*]Number of retained events
-[*]History window
-[/list]
-The event list can also be cleared directly from the dashboard.
+[h2]Diagnostic captures[/h2]
+Start a short capture from the dashboard, or enable automatic capture after a critical slow tick. Choose a capture length from 5 to 30 seconds. Watcher profiles selected workloads for pawn job/AI updates, pathfinding, reachable-target searches, pawn health updates, and map region rebuilds. The report includes calls, accumulated inclusive time, peak call time, what each category covers, suggested next checks, and Harmony patch owners for the measured methods. You can copy the report to share it when asking for help.
+
+Detailed workload hooks are installed only while a capture is running and are removed afterward. Capture results are session-only and reset when a game is loaded.
+
+[b]About mod attribution:[/b] Patch owners are possible contributors to investigate, not proof of cause. A mod can affect work indirectly or patch a method outside Watcher's measured scopes. Category timings can overlap, so do not add their totals together. Watcher measures elapsed time around selected methods; it does not measure each mod's individual CPU time. Rendering time and main-thread utilization are not included.
+
+[h2]Controls and settings[/h2]
+The dashboard includes current metrics, a configurable history graph, recent slow-tick events, diagnostic capture controls, and a report you can review or copy. Settings control the long-tick and critical thresholds, event limit, graph history, capture length, and optional automatic capture after critical ticks.
 
 [h2]Source Code[/h2]
 Watcher is open source. The project repository is available [url=https://github.com/soc1almemory/watcher-mod]here[/url].
-
-
