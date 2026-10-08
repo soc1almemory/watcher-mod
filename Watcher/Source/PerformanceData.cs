@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 using Verse;
 
@@ -48,6 +47,51 @@ namespace Watcher
         }
     }
 
+    // Fixed storage avoids shifting the whole event list whenever the oldest entry expires.
+    internal sealed class EventBuffer
+    {
+        private const int Capacity = 500;
+        private readonly WatcherEvent[] data = new WatcherEvent[Capacity];
+        private int first;
+        private int count;
+
+        public int Count => count;
+        public WatcherEvent this[int index] => data[(first + index) % Capacity];
+
+        public void Clear()
+        {
+            Array.Clear(data, 0, data.Length);
+            first = 0;
+            count = 0;
+        }
+
+        public void Add(WatcherEvent item, int limit)
+        {
+            limit = Mathf.Clamp(limit, 1, Capacity);
+            Trim(limit);
+            if (count == limit)
+            {
+                data[first] = item;
+                first = (first + 1) % Capacity;
+                return;
+            }
+
+            data[(first + count) % Capacity] = item;
+            count++;
+        }
+
+        public void Trim(int limit)
+        {
+            limit = Mathf.Clamp(limit, 1, Capacity);
+            while (count > limit)
+            {
+                data[first] = null;
+                first = (first + 1) % Capacity;
+                count--;
+            }
+        }
+    }
+
     internal static class PerformanceData
     {
         private const int TickWindowCapacity = 1200;
@@ -57,7 +101,7 @@ namespace Watcher
         private static int tickDurationCount;
 
         public static readonly CircularSamples History = new CircularSamples();
-        public static readonly List<WatcherEvent> Events = new List<WatcherEvent>(100);
+        public static readonly EventBuffer Events = new EventBuffer();
         public static float LastTickMs;
         public static float AverageTickMs;
         public static float MaxTickMs;
@@ -148,7 +192,6 @@ namespace Watcher
         private static void AddEvent(float duration)
         {
             int limit = WatcherMod.Settings?.maxEvents ?? 100;
-            if (Events.Count >= limit) Events.RemoveAt(0);
             string source;
             switch (LargestStage)
             {
@@ -169,7 +212,7 @@ namespace Watcher
                 StageDurationMs = LargestStageMs,
                 DurationMs = duration,
                 Critical = duration >= (WatcherMod.Settings?.criticalTickMs ?? 50f)
-            });
+            }, limit);
         }
 
         public static void FrameUpdate()
@@ -211,13 +254,7 @@ namespace Watcher
                     graphElapsed = 0f;
                 }
             }
-            PruneEvents();
-        }
-
-        private static void PruneEvents()
-        {
-            int limit = WatcherMod.Settings?.maxEvents ?? 100;
-            while (Events.Count > limit) Events.RemoveAt(0);
+            Events.Trim(WatcherMod.Settings?.maxEvents ?? 100);
         }
 
         public static void ClearEvents() => Events.Clear();

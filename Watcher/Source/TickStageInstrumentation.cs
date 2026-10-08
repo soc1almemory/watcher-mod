@@ -14,6 +14,8 @@ namespace Watcher
         private static readonly MethodBase MapPreTick = AccessTools.Method(typeof(Map), "MapPreTick");
         private static readonly MethodBase TickListTick = AccessTools.Method(typeof(TickList), "Tick");
         private static readonly MethodBase MapPostTick = AccessTools.Method(typeof(Map), "MapPostTick");
+        private static readonly string[] patchOwnerCache = new string[4];
+        private static readonly bool[] patchOwnerResolved = new bool[4];
 
         public static void Record(byte stage, long startedAt)
         {
@@ -25,6 +27,8 @@ namespace Watcher
         public static string GetPatchOwners(byte stage)
         {
             if (stage == 0) return null;
+            if (patchOwnerResolved[stage]) return patchOwnerCache[stage];
+            patchOwnerResolved[stage] = true;
             MethodBase method = stage == 1 ? MapPreTick : stage == 2 ? TickListTick : MapPostTick;
             if (method == null) return null;
             Patches patches = Harmony.GetPatchInfo(method);
@@ -54,7 +58,8 @@ namespace Watcher
                 listed++;
             }
             if (additional > 0) names.Append(" +").Append(additional).Append(" more");
-            return listed == 0 ? null : names.ToString();
+            patchOwnerCache[stage] = listed == 0 ? null : names.ToString();
+            return patchOwnerCache[stage];
         }
     }
 

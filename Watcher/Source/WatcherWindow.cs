@@ -6,6 +6,10 @@ namespace Watcher
 {
     public sealed class WatcherWindow : Window
     {
+        private static readonly System.Func<Sample, float> FrameSelector = s => s.FrameMs;
+        private static readonly System.Func<Sample, float> TickSelector = s => s.TickMs;
+        private static readonly System.Func<Sample, float> FpsSelector = s => s.Fps;
+        private static readonly System.Func<Sample, float> TpsSelector = s => s.Tps;
         public static WatcherWindow Instance { get; private set; }
         private Vector2 eventScroll;
         private bool showFps = true;
@@ -141,10 +145,10 @@ namespace Watcher
                 maxFps = Mathf.Max(maxFps, s.Fps);
                 maxTps = Mathf.Max(maxTps, s.Tps);
             }
-            DrawSeries(rect, first, count, maxMs, s => s.FrameMs, new Color(.35f, .7f, 1f), showFrame);
-            DrawSeries(rect, first, count, maxMs, s => s.TickMs, new Color(1f, .65f, .25f), showTick);
-            DrawSeries(rect, first, count, maxMs, s => s.Fps, new Color(.35f, .85f, .55f), showFps, maxFps);
-            DrawSeries(rect, first, count, maxMs, s => s.Tps, new Color(.8f, .5f, .95f), showTps, maxTps);
+            DrawSeries(rect, first, count, maxMs, FrameSelector, new Color(.35f, .7f, 1f), showFrame);
+            DrawSeries(rect, first, count, maxMs, TickSelector, new Color(1f, .65f, .25f), showTick);
+            DrawSeries(rect, first, count, maxMs, FpsSelector, new Color(.35f, .85f, .55f), showFps, maxFps);
+            DrawSeries(rect, first, count, maxMs, TpsSelector, new Color(.8f, .5f, .95f), showTps, maxTps);
         }
 
         private static void DrawSeries(Rect rect, int first, int count, float max, System.Func<Sample, float> selector, Color color, bool enabled, float scale = -1f)
